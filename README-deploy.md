@@ -1,8 +1,9 @@
 # Authenticate Me - Deploying your Express Project to Render
 
-Render is a web application for deploying fullstack applications. The free tier allows you to create a database instance to store
-database schemas and tables for multiple applications, as well as host web
-services (such as APIs) and static sites.
+Render is a web application for deploying fullstack applications. The free tier
+allows you to create a database instance to store database schemas and tables
+for multiple applications, as well as host web services (such as APIs) and
+static sites.
 
 Before you begin deploying, **make sure to remove any `console.log`s or
 `debugger`s in any production code**. You can search your entire project folder
@@ -148,8 +149,10 @@ the environment variables to properly deploy the application.
 ### Part A: Configure the Start and Build Commands
 
 Start by giving your application a name. This is the name that will be included
-the URL of the deployed site, so make sure it is clear and simple. The name
-should be entered in kebab-case.
+in the URL of the deployed site, so make sure it is clear and simple. The name
+should be entered in kebab-case. The words "Airbnb", "Meetup", and "Clone"
+***MUST NOT BE INCLUDED*** in the name. If you submit your project with any of
+those words in the URL, you'll be asked to recreate your Render instance.
 
 Leave the root directory field blank. By default, Render will run commands from
 the root directory.
@@ -164,17 +167,41 @@ For this project, enter the following script into the Build field, all in one
 line:
 
 ```shell
-# build command - enter all in one line
+# build command while developing - enter all in one line
+
+npm install &&
+npm run build &&
+npm run sequelize --prefix backend db:seed:undo:all &&
+npm run sequelize --prefix backend db:migrate:undo:all &&
+npm run sequelize --prefix backend db:migrate &&
+npm run sequelize --prefix backend db:seed:all
+```
+
+This script will install dependencies, run the build command in the
+__package.json__ file, then run the `down` & `up` functions in the migration and
+seed files. All of these commands will be run from the backend directory.
+
+This is the recommended script to use while you develop and test your production
+application. Running the `down` functions for your seed and migration files will
+ensure that any changes to these files will be recognized by Sequelize and
+applied to your production database.
+
+However, this also means your data won't persist when redeploying. That's fine
+while testing your application, but needs to be changed before your final
+production deployment.
+
+Once your project is complete and no further changes will be made to your
+migration & seed files, you can update the command to remove the two lines that
+contain `undo`:
+
+```shell
+# build command for final submission - enter all in one line
 
 npm install &&
 npm run build &&
 npm run sequelize --prefix backend db:migrate &&
 npm run sequelize --prefix backend db:seed:all
 ```
-
-This script will install dependencies, run the build command in the
-__package.json__ file, and run the migrations and seed files. All of these
-commands will be run from the backend directory.
 
 > Note: Due to limitations of Render.com's free tier, you will be including the
 > seed command within the build. **This should only be done for demo
@@ -191,12 +218,11 @@ npm start
 
 ### Part B: Add the Environment Variables
 
-Click on the "Advanced" button at the bottom of the form to configure the
-environment variables your application needs to access to run properly. In the
-development environment, you have been securing these variables in the __.env__
-file, which has been removed from source control. In this step, you will need to
-input the keys and values for the environment variables you need for production
-into the Render GUI.
+Scroll down to the "Environment Variables" section to configure the values your
+application needs to access to run properly. In the development environment, you
+have been securing these variables in the __.env__ file, which has been removed
+from source control. In this step, you will need to input the keys and values
+for the environment variables you need for production into the Render GUI.
 
 Click on "Add Environment Variable" to start adding as many variables as you
 need. You will not need to add the `PORT` or `DB_FILE` variables, since those
@@ -205,14 +231,15 @@ are only used in the development environment, not production.
 Add the following keys and values in the Render GUI form:
 
 - JWT_SECRET (click "Generate" to generate a secure secret for production)
-- JWT_EXPIRES_IN (copy value from local __.env file__)
+- JWT_EXPIRES_IN 604800 (or the value as your local __.env file__)
 - NODE_ENV production
 - SCHEMA (custom name, in snake_case)
 
-In a new tab, navigate to your dashboard and click on your Postgres database
-instance.
+Open a new tab and navigate to your Render dashboard. Click on your Postgres
+database instance and scroll down to "Connections". Copy the value from
+"Internal Database URL", then return to the tab with "Environment Variables".
 
-Add the following keys and values:
+Add the following key and paste the value you copied:
 
 - DATABASE_URL (copy value from Internal Database URL field)
 
@@ -220,23 +247,27 @@ _Note: As you work to further develop your project, you may need to add more
 environment variables to your local __.env__ file. Make sure you add these
 environment variables to the Render GUI as well for the next deployment._
 
-Next, choose "Yes" for the Auto-Deploy field. This will re-deploy your
-application every time you push to main.
+Click on the "Advanced" dropdown at the bottom of the form and make sure "Yes"
+is selected for the Auto-Deploy field. This will re-deploy your application
+every time you push to main.
 
-Now, you are finally ready to deploy! Click "Create Web Service" to deploy your
+Now, you are finally ready to deploy! Click "Deploy Web Service" to deploy your
 project. The deployment process will likely take about 10-15 minutes if
-everything works as expected. You can monitor the logs to see your build and start commands being executed, and see any errors in the build process.
+everything works as expected. You can monitor the logs to see your build and
+start commands being executed, and see any errors in the build process.
 
-When deployment is complete, open your deployed site and check to see if you successfully deployed your Express application to Render! You can find the URL for your site just below the name of the Web Service at the top of the page.
+When deployment is complete, open your deployed site and check to see if you
+successfully deployed your Express application to Render! You can find the URL
+for your site just below the name of the Web Service at the top of the page.
 
 ## Phase 5: Ongoing Maintenance
 
 The main limitation of the free Render Postgres database instance is that it
-will be deleted after 90 days. In order to keep your application up and running,
-you MUST create a new database instance before the 90 day period ends.
+will be deleted after 30 days. In order to keep your application up and running,
+you MUST create a new database instance before the 30 day period ends.
 
 __Set up calendar reminders for yourself to reset your Render Postgres database
-instance every 85 days so your application(s) will not experience any
+instance every 25 days so your application(s) will not experience any
 downtime.__
 
 Each time you get your calendar reminder, follow the steps below.
